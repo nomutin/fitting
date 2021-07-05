@@ -27,7 +27,12 @@ class ObjectiveFunction:
     @staticmethod
     def gompertz2_objective(params, data):
         alpha, b, c = params
-        return sum([pt - c * np.exp((-1) * alpha * np.exp((-1) * b * t)) ** 2 for t, pt in enumerate(data)])
+        return sum([(pt - c * np.exp((-1) * alpha * np.exp((-1) * b * t))) ** 2 for t, pt in enumerate(data)])
+
+    @staticmethod
+    def logistic(params, data):
+        a, gamma = params
+        return sum([(gamma - a * data[t] - (data[t+1] - data[t])/data[t]) ** 2 for t in range(0, len(data)-1)])
 
 
 class Param:
@@ -43,13 +48,19 @@ class Param:
             self.exponential_constant()
         if 'gompertz' in mode:
             self.gompertz()
+        if 'logistic' in mode:
+            self.logistic()
 
     def linear(self):
         popt = minimize(fun=ObjectiveFunction.linear_objective, args=(self.data, ),
                         x0=np.array([1.0, 1.0]), method='Nelder-Mead', options={'maxiter': 100000})
-        self.estimated_params.update({'linear': {'full': popt, 'a': popt['x'][0], 'c': popt["x"][1],
+        a = popt['x'][0]
+        c = popt["x"][1]
+        self.estimated_params.update({'linear': {'full': popt, 'a': a, 'c': c,
                                                  'success': popt["success"],
-                                                 'equ': f'y = {popt["x"][0]} + {popt["x"][1]}'}})
+                                                 'equ': f'y = {a} * t + {c}',
+                                                 'y': lambda t: a*t+c}
+                                      })
 
     def exponential(self):
         popt = minimize(fun=ObjectiveFunction.exponential_objective, args=(self.data,),
@@ -57,7 +68,9 @@ class Param:
         a = popt['x'][0]
         c = popt['x'][1]
         self.estimated_params.update({'exponential': {'full': popt, 'a': a, 'c': c,
-                                      'success': popt["success"], 'equ': f'y = {c} * exp({a} * t)'}})
+                                      'success': popt["success"], 'equ': f'y = {c} * exp({a} * t)',
+                                                      'y': lambda t: c*np.exp(a*t)}
+                                      })
 
     def exponential_constant(self):
         popt = minimize(fun=ObjectiveFunction.exponential_constant_objective, args=(self.data, ),
@@ -67,7 +80,9 @@ class Param:
         s = gamma / a
         c = sum([(s - pt) * np.exp(a*t) for t, pt in enumerate(self.data)]) / len(self.data)
         self.estimated_params.update({'exponential_constant': {'full': popt, 'a': a, 'c': c, 'gamma': gamma, 's': s,
-                                      'success': popt["success"], 'equ': f'y = {s} - {c} * exp(-{a} * t)'}})
+                                      'success': popt["success"], 'equ': f'y = {s} - {c} * exp(-{a} * t)',
+                                                               'y': lambda t: s-c*np.exp(-a*t)}
+                                      })
 
     def gompertz(self):
         popt = minimize(fun=ObjectiveFunction.gompertz1_objective, args=(self.data,),
@@ -84,4 +99,21 @@ class Param:
         # c = popt['x'][2]
         self.estimated_params.update({'gompertz': {'full': popt, 'a': alpha_*b_, 'b': b_, 'c': c_, 'alpha': alpha_,
                                                    'success': popt['success'],
-                                                   'equ': f'y = {c_} * exp(-{alpha_} * exp(-{b_} * t))'}})
+                                                   'equ': f'y = {c_} * exp(-{alpha_} * exp(-{b_} * t))',
+                                                   'y': lambda t: c_*np.exp(-alpha_*np.exp(-b_*t))
+                                                   }
+                                      })
+
+    def logistic(self):
+        popt = minimize(fun=ObjectiveFunction.logistic, args=(self.data,),
+                        x0=np.array([1.0, 1.0]), method='Nelder-Mead', options={'maxiter': 100000})
+        a = popt['x'][0]
+        gamma = popt['x'][1]
+        s = gamma / a
+        c = sum([(s-pt) * np.exp(gamma * t) / pt for t, pt in enumerate(self.data)]) / len(self.data)
+        self.estimated_params.update({'logistic': {'full': popt, 'a': a, 'c': c, 'gamma': gamma, 's': s,
+                                                   'success': popt['success'],
+                                                   'equ': f'y = {s}/(1 + {c} * exp(-{gamma} * t)',
+                                                   'y': lambda t: s/(1+c*np.exp(-gamma*t))
+                                                   }
+                                      })

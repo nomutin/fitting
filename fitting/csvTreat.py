@@ -1,9 +1,7 @@
 import csv
 
 
-def load_data(_path: str) -> list:
+def load_data(_path: str, data_column: int = -1) -> list:
+    """ data_column行目を0から始まる時系列データとする """
     with open(_path, 'r') as _f:
-        reader = csv.reader(_f)
-        value = [float(i[-1]) for i in reader]
-        index = [int(i) for i in range(len(value))]
-        return [index, value]
+        return [float(c[data_column]) for c in csv.reader(_f)]
