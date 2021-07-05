@@ -1,1 +1,1 @@
-from . import csvTreat, plotting, prameterPredict
+from . import CSVTreat, Plotting, Parameters
