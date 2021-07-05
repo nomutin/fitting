@@ -27,8 +27,7 @@ class ObjectiveFunction:
     @staticmethod
     def gompertz2_objective(params, data):
         alpha, b, c = params
-        for t, pt in enumerate(data):
-            phi += pt - c * np.exp()
+        return sum([pt - c * np.exp((-1) * alpha * np.exp((-1) * b * t)) ** 2 for t, pt in enumerate(data)])
 
 
 class Param:
@@ -42,6 +41,8 @@ class Param:
             self.exponential()
         if 'exponential_constant' in mode:
             self.exponential_constant()
+        if 'gompertz' in mode:
+            self.gompertz()
 
     def linear(self):
         popt = minimize(fun=ObjectiveFunction.linear_objective, args=(self.data, ),
@@ -71,8 +72,16 @@ class Param:
     def gompertz(self):
         popt = minimize(fun=ObjectiveFunction.gompertz1_objective, args=(self.data,),
                         x0=np.array([1.0, 1.0]), method='Nelder-Mead', options={'maxiter': 100000})
-        gamma = popt['x'][0]
-        b = popt['x'][1]
-        a = np.exp(gamma)
-        alpha = a / b
-        c = sum([pt * np.exp(alpha * np.exp((-1) * b * t)) for t, pt in enumerate(self.data)]) / len(self.data)
+        gamma_ = popt['x'][0]
+        b_ = popt['x'][1]
+        a_ = np.exp(gamma_)
+        alpha_ = a_ / b_
+        c_ = sum([pt * np.exp(alpha_ * np.exp((-1) * b_ * t)) for t, pt in enumerate(self.data)]) / len(self.data)
+        # popt = minimize(fun=ObjectiveFunction.gompertz2_objective, args=(self.data,),
+        #                 x0=np.array([alpha_, b_, c_]), method='Nelder-Mead', options={'maxiter': 100000})
+        # alpha = popt['x'][0]
+        # b = popt['x'][1]
+        # c = popt['x'][2]
+        self.estimated_params.update({'gompertz': {'full': popt, 'a': alpha_*b_, 'b': b_, 'c': c_, 'alpha': alpha_,
+                                                   'success': popt['success'],
+                                                   'equ': f'y = {c_} * exp(-{alpha_} * exp(-{b_} * t))'}})
