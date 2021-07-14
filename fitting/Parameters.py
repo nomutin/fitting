@@ -120,7 +120,7 @@ class Param:
         a = popt['x'][0]
         gamma = popt['x'][1]
         s = gamma / a
-        c = sum([(s-pt) * np.exp(gamma * t) / pt for t, pt in enumerate(self.data)]) / len(self.data)
+        c = sum([(s-pt) * np.exp(gamma * t) / pt for t, pt in enumerate(self.data)]) / (len(self.data))
         self.estimated_params.update({'logistic': {'full': popt, 'a': a, 'c': c, 'gamma': gamma, 's': s,
                                                    'success': popt['success'],
                                                    'equ': f'y = {s}/(1 + {c} * exp(-{gamma} * t)',
