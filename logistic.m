@@ -5,7 +5,7 @@ function phi = logistic(x)
     gamma = x(2);
     for i = 1:length(data)-1
         pt = data(2, i);
-        delta = data(2, i+1) - data(2, i);
+        delta = (data(2, i+1) - data(2, i));
         phi = phi + (gamma - a * pt - delta/pt)^2;
     end
 

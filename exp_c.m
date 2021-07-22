@@ -5,7 +5,7 @@ function phi = exp_c(x)
     gamma = x(2);
     for i = 1:length(data)-1
         pt = data(2, i);
-        delta = data(2, i+1) - data(2, i);
+        delta = (data(2, i+1) - data(2, i))/(data(1, i+1) - data(1, i));
         phi = phi + (gamma - a * pt - delta)^2;
     end
 end

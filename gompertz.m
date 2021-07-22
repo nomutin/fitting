@@ -7,7 +7,7 @@ function phi = gompertz(x)
     for i = 1:length(data)-1
         t = data(1, i);
         pt = data(2, i);
-        delta = data(2, i+1) - data(2, i);
+        delta = (data(2, i+1) - data(2, i));
         
         phi = phi + (gamma - b*t - log(delta/pt))^2;
     end
